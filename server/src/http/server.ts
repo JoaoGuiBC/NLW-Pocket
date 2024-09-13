@@ -17,4 +17,4 @@ app.setSerializerCompiler(serializerCompiler)
 
 app.register(routes)
 
-app.listen({ port: 3333 }).then(() => console.log('HTTP server running'))
+app.listen({ port: 3333 }).then(() => console.log('HTTP server running on port 3333'))
