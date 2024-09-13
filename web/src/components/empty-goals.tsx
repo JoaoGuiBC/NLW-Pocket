@@ -16,7 +16,7 @@ export function EmptyGoals() {
         Você ainda não cadastrou nenhuma meta, que tal cadastrar uma agora mesmo?
       </p>
 
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>
           <Plus className="size-4" />
           Cadastrar meta

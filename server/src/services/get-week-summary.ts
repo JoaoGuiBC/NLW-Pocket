@@ -13,9 +13,21 @@ type GoalsPerDay = Record<
   }>
 >
 
-export async function getWeekSummary() {
-  const firstDayOfWeek = dayjs().startOf('week').toDate()
-  const lastDayOfWeek = dayjs().endOf('week').toDate()
+export async function getWeekSummary(weekOfYear: number) {
+  const year = dayjs().startOf('year')
+
+  const firstDayOfWeek = year.add(weekOfYear, 'week').startOf('week').toDate()
+  const lastDayOfWeek = year.add(weekOfYear, 'week').endOf('week').toDate()
+
+  const oldestGoal = db
+    .$with('oldest_goal')
+    .as(
+      db
+        .select({ createdAt: goals.createdAt })
+        .from(goals)
+        .orderBy(goals.createdAt)
+        .limit(1)
+    )
 
   const goalsCreateUpToWeek = db.$with('goals_created_up_to_week').as(
     db
@@ -70,8 +82,11 @@ export async function getWeekSummary() {
   )
 
   const result = await db
-    .with(goalsCreateUpToWeek, goalsCompletedInWeek, goalsCompletedByWeekDay)
+    .with(oldestGoal, goalsCreateUpToWeek, goalsCompletedInWeek, goalsCompletedByWeekDay)
     .select({
+      oldestGoal: sql /*sql*/`(SELECT * FROM ${oldestGoal})`.mapWith(
+        oldestGoal.createdAt
+      ),
       completed: sql /*sql*/`(SELECT COUNT(*) FROM ${goalsCompletedInWeek})`.mapWith(
         Number
       ),
@@ -79,7 +94,6 @@ export async function getWeekSummary() {
         sql /*sql*/`(SELECT SUM(${goalsCreateUpToWeek.desiredWeeklyFrequency}) FROM ${goalsCreateUpToWeek})`.mapWith(
           Number
         ),
-
       goalsPerDay: sql /*sql*/<GoalsPerDay>`
         JSON_OBJECT_AGG(
           ${goalsCompletedByWeekDay.completedAtDate},

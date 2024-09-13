@@ -6,12 +6,17 @@ import { createGoalCompletion } from '@/http/create-goal-completion'
 
 import { OutlineButton } from './ui/outline-button'
 
-export function PendingGoals() {
+interface PendingGoalsProps {
+  disableButtons: boolean
+  selectedWeek: number
+}
+
+export function PendingGoals({ disableButtons, selectedWeek }: PendingGoalsProps) {
   const queryClient = useQueryClient()
 
   const { data } = useQuery({
-    queryKey: ['pending-goals'],
-    queryFn: getPendingGoals,
+    queryKey: ['pending-goals', selectedWeek],
+    queryFn: () => getPendingGoals(selectedWeek),
     staleTime: 1000 * 60, // 60 minutes
   })
 
@@ -30,7 +35,7 @@ export function PendingGoals() {
         <OutlineButton
           key={goal.id}
           onClick={() => handleCompleteGoal(goal.id)}
-          disabled={goal.completionCount >= goal.desiredWeeklyFrequency}
+          disabled={goal.completionCount >= goal.desiredWeeklyFrequency || disableButtons}
         >
           <Plus className="size4 text-zinc-600" />
           {goal.title}

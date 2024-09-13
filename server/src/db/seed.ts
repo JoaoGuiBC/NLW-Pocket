@@ -1,14 +1,7 @@
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
 
 import { client, db } from '.'
 import { goalCompletions, goals } from './schema'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const currentTimezone = dayjs.tz.guess()
 
 async function seed() {
   await db.delete(goalCompletions)
@@ -18,17 +11,39 @@ async function seed() {
     .insert(goals)
     .values([
       { title: 'Fazer três refeições', desiredWeeklyFrequency: 5 },
-      { title: 'Estudar', desiredWeeklyFrequency: 3 },
-      { title: 'Fazer caminhada', desiredWeeklyFrequency: 2 },
-      { title: 'Dormir cedo', desiredWeeklyFrequency: 7 },
+      {
+        title: 'Estudar',
+        desiredWeeklyFrequency: 3,
+        createdAt: dayjs().subtract(1, 'week').toDate(),
+      },
+      {
+        title: 'Fazer caminhada',
+        desiredWeeklyFrequency: 2,
+        createdAt: dayjs().subtract(1, 'week').toDate(),
+      },
+      {
+        title: 'Dormir cedo',
+        desiredWeeklyFrequency: 5,
+        createdAt: dayjs().subtract(1, 'week').toDate(),
+      },
     ])
     .returning()
 
   await db.insert(goalCompletions).values([
+    { goalId: result[1].id, createdAt: dayjs().subtract(1, 'week').toDate() },
+    {
+      goalId: result[1].id,
+      createdAt: dayjs().startOf('week').subtract(1, 'week').toDate(),
+    },
+    { goalId: result[3].id, createdAt: dayjs().subtract(1, 'week').toDate() },
+    {
+      goalId: result[2].id,
+      createdAt: dayjs().startOf('week').subtract(1, 'week').toDate(),
+    },
     { goalId: result[0].id, createdAt: new Date() },
     {
       goalId: result[2].id,
-      createdAt: dayjs.utc().tz(currentTimezone).startOf('week').toDate(),
+      createdAt: dayjs().startOf('week').toDate(),
     },
   ])
 }

@@ -1,13 +1,22 @@
 import dayjs from 'dayjs'
+import { useState } from 'react'
 import ptBR from 'dayjs/locale/pt-BR'
-import { CheckCircle2, Plus } from 'lucide-react'
+import weekOfYear from 'dayjs/plugin/weekOfYear'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
 import { InOrbitIcon } from './in-orbit-icon'
 
+import {
+  getFormattedDate,
+  getFormattedTime,
+  getOldestWeekWithGoals,
+  getWeek,
+  getWeekDay,
+} from '@/utils/convert-date'
+
 import { getSummary } from '@/http/get-summary'
 import { removeGoalCompletion } from '@/http/remove-goal-completion'
-import { getFormattedDate, getFormattedTime, getWeekDay } from '@/utils/convert-date'
 
 import { Button } from './ui/button'
 import { Separator } from './ui/separator'
@@ -17,22 +26,30 @@ import { Progress, ProgressIndicator } from './ui/progress-bar'
 import { PendingGoals } from './pending-goals'
 
 dayjs.locale(ptBR)
+dayjs.extend(weekOfYear)
+
+const thisWeek = dayjs().week() - 1
 
 export function Summary() {
+  const [selectedWeek, setSelectedWeek] = useState(thisWeek)
   const queryClient = useQueryClient()
 
   const { data } = useQuery({
-    queryKey: ['summary'],
-    queryFn: getSummary,
+    queryKey: ['summary', selectedWeek],
+    queryFn: () => getSummary(selectedWeek),
     staleTime: 1000 * 60, // 60 minutes
   })
 
   if (!data) return null
 
-  const firstDayOfWeek = dayjs().startOf('week').format('D MMM')
-  const lastDayOfWeek = dayjs().endOf('week').format('D MMM')
-
   const completedPercentage = Math.round((data.completed * 100) / data.total)
+
+  function handleSelectNextWeek() {
+    setSelectedWeek(week => week + 1)
+  }
+  function handleSelectPreviousWeek() {
+    setSelectedWeek(week => week - 1)
+  }
 
   async function handleRemoveCompletion(goalCompletionId: string) {
     await removeGoalCompletion(goalCompletionId)
@@ -44,14 +61,31 @@ export function Summary() {
   return (
     <div className="py-10 max-w-[480px] px-5 mx-auto flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           <InOrbitIcon />
           <span className="text-lg font-semibold capitalize">
-            {firstDayOfWeek} - {lastDayOfWeek}
+            {getWeek(selectedWeek)}
           </span>
+
+          <button
+            type="button"
+            className="-ml-2 mt-1 text-zinc-400 transition-colors hover:text-zinc-300 disabled:text-zinc-500"
+            onClick={handleSelectPreviousWeek}
+            disabled={getOldestWeekWithGoals(data.oldestGoal) === selectedWeek}
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <button
+            type="button"
+            className="-ml-2 mt-1 text-zinc-400 transition-colors hover:text-zinc-300 disabled:text-zinc-500"
+            onClick={handleSelectNextWeek}
+            disabled={selectedWeek === thisWeek}
+          >
+            <ChevronRight className="size-5" />
+          </button>
         </div>
 
-        <DialogTrigger>
+        <DialogTrigger asChild>
           <Button size="sm">
             <Plus className="size-4" />
             Cadastrar meta
@@ -75,7 +109,10 @@ export function Summary() {
 
       <Separator />
 
-      <PendingGoals />
+      <PendingGoals
+        disableButtons={selectedWeek !== thisWeek}
+        selectedWeek={selectedWeek}
+      />
 
       <div className="flex flex-col gap-6">
         <h2 className="text-xl font-medium">Sua semana</h2>

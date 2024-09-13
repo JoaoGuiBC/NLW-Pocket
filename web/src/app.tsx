@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { useQuery } from '@tanstack/react-query'
 
 import { getSummary } from './http/get-summary'
@@ -10,7 +11,7 @@ import { EmptyGoals } from './components/empty-goals'
 export function App() {
   const { data } = useQuery({
     queryKey: ['summary'],
-    queryFn: getSummary,
+    queryFn: () => getSummary(dayjs().week() - 1),
     staleTime: 1000 * 60, // 60 minutes
   })
 
