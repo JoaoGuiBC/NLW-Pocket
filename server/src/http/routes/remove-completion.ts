@@ -15,7 +15,6 @@ export const removeCompletionRoute: FastifyPluginAsyncZod = async app => {
     async request => {
       const { goalCompletionId } = request.body
 
-      console.log(goalCompletionId)
       await removeGoalCompletion({ goalCompletionId })
     }
   )

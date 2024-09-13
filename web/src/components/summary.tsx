@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { InOrbitIcon } from './in-orbit-icon'
 
 import { getSummary } from '@/http/get-summary'
+import { removeGoalCompletion } from '@/http/remove-goal-completion'
+import { getFormattedDate, getFormattedTime, getWeekDay } from '@/utils/convert-date'
 
 import { Button } from './ui/button'
 import { Separator } from './ui/separator'
@@ -13,7 +15,6 @@ import { DialogTrigger } from './ui/dialog'
 import { Progress, ProgressIndicator } from './ui/progress-bar'
 
 import { PendingGoals } from './pending-goals'
-import { removeGoalCompletion } from '@/http/remove-goal-completion'
 
 dayjs.locale(ptBR)
 
@@ -79,43 +80,36 @@ export function Summary() {
       <div className="flex flex-col gap-6">
         <h2 className="text-xl font-medium">Sua semana</h2>
 
-        {Object.entries(data.goalsPerDay).map(([date, goals]) => {
-          const weekDay = dayjs(date).format('dddd')
-          const formattedDate = dayjs(date).format('D[ de ]MMMM')
+        {Object.entries(data.goalsPerDay).map(([date, goals]) => (
+          <div key={date} className="flex flex-col gap-4">
+            <h3 className="font-medium">
+              <span className="capitalize">{getWeekDay(date)}</span>{' '}
+              <span className="text-zinc-400 text-xs">({getFormattedDate(date)})</span>
+            </h3>
 
-          return (
-            <div key={date} className="flex flex-col gap-4">
-              <h3 className="font-medium">
-                <span className="capitalize">{weekDay}</span>{' '}
-                <span className="text-zinc-400 text-xs">({formattedDate})</span>
-              </h3>
-
-              <ul className="flex flex-col gap-3">
-                {goals.map(goal => {
-                  const time = dayjs(goal.completedAt).format('HH:mm')
-
-                  return (
-                    <li key={goal.id} className="flex items-center gap-2">
-                      <CheckCircle2 className="size-4 text-pink-500" />
-                      <span className="text-sm text-zinc-400">
-                        Você completou "
-                        <span className="text-zinc-100">{goal.title}</span>" às{' '}
-                        <span className="text-zinc-100">{time}h</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCompletion(goal.id)}
-                        className="ml-1 text-xs text-zinc-500 underline underline-offset-2 transition-colors hover:text-zinc-600"
-                      >
-                        Desfazer
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )
-        })}
+            <ul className="flex flex-col gap-3">
+              {goals.map(goal => (
+                <li key={goal.id} className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-pink-500" />
+                  <span className="text-sm text-zinc-400">
+                    Você completou "<span className="text-zinc-100">{goal.title}</span>"
+                    às{' '}
+                    <span className="text-zinc-100">
+                      {getFormattedTime(goal.completedAt)}h
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCompletion(goal.id)}
+                    className="ml-1 text-xs text-zinc-500 underline underline-offset-2 transition-colors hover:text-zinc-600"
+                  >
+                    Desfazer
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   )
